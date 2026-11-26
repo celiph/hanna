@@ -1,0 +1,613 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Hanna</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Big+Shoulders+Display:wght@700;800;900&family=Figtree:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --paper:#edf1f5;--card:#ffffff;--ink:#14213d;--muted:#5f6b7e;--line:#d9e0e8;
+  --pink:#ff7a1a;--pink-soft:#ffe8d6;--blue:#ff7a1a;--blue-soft:#ffe8d6;--ok:#17936a;--ok-soft:#d9f3e9;
+  --accent:var(--pink);--far:#a9b4c4;--ghost:#dde3ea;--prop:#e4e9ef;--propd:#4a5568;
+  --tile:#f4f7fa;
+  /* Einheitliche Maße: Rundungen, Rahmen, Abstände */
+  --r-lg:16px;--r-md:12px;--r-sm:8px;--bw:1.5px;--gap:8px;--sp:16px;--hit:44px;
+}
+@media (prefers-color-scheme:dark){
+  :root{--paper:#0f1626;--card:#182238;--ink:#eaf0f7;--muted:#97a3b6;--line:#26324a;
+  --pink-soft:#3a2414;--blue-soft:#3a2414;--ok-soft:#12352a;--ok:#3ccf98;
+  --far:#5a6880;--ghost:#222d44;--prop:#26324a;--propd:#b3bfd1;--tile:#121b2e;}
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html{-webkit-text-size-adjust:100%}
+body{font-family:Figtree,system-ui,sans-serif;background:var(--paper);color:var(--ink);min-height:100vh;padding-bottom:calc(96px + env(safe-area-inset-bottom))}
+button{font-family:inherit;color:inherit}
+button:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
+.wrap{max-width:620px;margin:0 auto;padding:24px var(--sp) var(--sp)}
+
+/* Kopf */
+header{margin:0 0 24px;height:72px}
+header h1{color:var(--pink);font:900 72px/1 "Big Shoulders Display",sans-serif;letter-spacing:.01em}
+
+/* Art: Kraft / Plyometrisch */
+.seg{display:grid;grid-template-columns:1fr 1fr;gap:var(--gap);margin-bottom:var(--sp)}
+.seg button{border:var(--bw) solid var(--line);background:var(--card);font:800 22px/1 "Big Shoulders Display",sans-serif;letter-spacing:.02em;padding:14px 12px 12px;border-radius:var(--r-md);cursor:pointer;text-align:left;display:flex;align-items:center;gap:10px}
+.seg button svg{width:24px;height:24px;flex:none;color:var(--c)}
+.seg button[data-cat="kraft"]{--c:var(--pink)}
+.seg button[data-cat="plyo"]{--c:var(--blue)}
+.seg button.active{background:var(--c);border-color:var(--c);color:#fff}
+.seg button.active svg{color:#fff}
+
+/* Kleine Beschriftungen */
+.flabel,.count{font-size:13px;font-weight:600;color:var(--muted);margin:0 0 var(--gap) 2px}
+.filters{display:flex;gap:var(--gap);overflow-x:auto;margin:0 calc(-1*var(--sp)) var(--sp);padding:0 var(--sp) 2px;scrollbar-width:none}
+.filters::-webkit-scrollbar{display:none}
+.filters{--fl:0px;--fr:56px;-webkit-mask-image:linear-gradient(90deg,transparent 0,#000 var(--fl),#000 calc(100% - var(--fr)),transparent 100%);mask-image:linear-gradient(90deg,transparent 0,#000 var(--fl),#000 calc(100% - var(--fr)),transparent 100%)}
+.filters.scrolled{--fl:40px}
+.filters.at-end{--fr:0px}
+.chip{border:var(--bw) solid var(--line);background:var(--card);font:600 15px/1 Figtree,sans-serif;padding:10px 16px;border-radius:999px;white-space:nowrap;cursor:pointer}
+.chip.active{background:var(--ink);border-color:var(--ink);color:var(--paper)}
+
+/* Übungskarten */
+.list{display:flex;flex-direction:column;gap:var(--gap)}
+.ex{--c:var(--pink);background:var(--card);border:var(--bw) solid var(--line);border-radius:var(--r-lg);padding:var(--gap) 12px var(--gap) var(--gap);display:flex;gap:12px;align-items:center}
+.ex.selected{border-color:var(--ok);box-shadow:inset 4px 0 0 var(--ok)}
+.ex.done .ex-title{text-decoration:line-through;text-decoration-thickness:2px;color:var(--muted)}
+.ex.done .fig{opacity:.5}
+.fig{width:100px;height:100px;flex:none;border-radius:var(--r-md);background:var(--tile);cursor:pointer;border:0;padding:0;display:block;overflow:hidden}
+.fig svg{width:100%;height:100%;display:block}
+.ex-body{flex:1;min-width:0;cursor:pointer}
+.ex-title{font:700 17px/1.25 Figtree,sans-serif}
+.ex-meta{display:flex;flex-wrap:wrap;gap:6px;margin-top:var(--gap)}
+.tag{font:600 13px/1 Figtree,sans-serif;color:var(--muted);background:var(--tile);padding:5px 10px;border-radius:var(--r-sm)}
+.toggle,.check{flex:none;width:var(--hit);height:var(--hit);border:var(--bw) solid var(--line);border-radius:50%;background:transparent;font-size:20px;font-weight:600;cursor:pointer;display:grid;place-items:center;line-height:1}
+.check{color:transparent}
+.ex.selected .toggle,.ex.done .check{background:var(--ok);border-color:var(--ok);color:#fff}
+
+/* Training */
+.progress{margin-bottom:var(--sp)}
+.progress-top{display:flex;justify-content:flex-end;align-items:baseline;margin-bottom:var(--gap)}
+.progress-top .sub{font:800 22px/1 "Big Shoulders Display",sans-serif;color:var(--ink)}
+.bar{height:14px;background:var(--card);border:var(--bw) solid var(--line);border-radius:999px;overflow:hidden}
+.bar i{display:block;height:100%;width:0;background:var(--ok);background-image:repeating-linear-gradient(90deg,transparent 0 9px,rgba(255,255,255,.18) 9px 10px);transition:width .35s ease}
+.empty{text-align:center;color:var(--muted);padding:44px 20px;font-size:16px;line-height:1.55;border:var(--bw) dashed var(--line);border-radius:var(--r-lg)}
+.row{display:flex;gap:var(--gap);margin-top:var(--sp)}
+.btn{flex:1;border-radius:var(--r-md);padding:14px;font:600 15px/1.2 Figtree,sans-serif;cursor:pointer;background:var(--card);border:var(--bw) solid var(--line)}
+.done-banner{background:var(--ok-soft);color:var(--ok);border-radius:var(--r-lg);padding:var(--sp);font-weight:700;font-size:16px;margin-bottom:var(--sp);display:none}
+
+/* Navigation unten */
+.tabs{position:fixed;left:0;right:0;bottom:0;z-index:5;display:flex;gap:var(--gap);padding:10px max(var(--sp),calc(50% - 294px)) calc(10px + env(safe-area-inset-bottom));background:var(--card);border-top:var(--bw) solid var(--line)}
+.tab{flex:1;border:0;background:transparent;color:var(--muted);font:800 22px/1 "Big Shoulders Display",sans-serif;letter-spacing:.02em;padding:14px 12px 12px;border-radius:var(--r-md);cursor:pointer;display:flex;align-items:center;justify-content:center;gap:var(--gap)}
+.tab.active{background:var(--ink);color:var(--paper)}
+
+/* Detailansicht */
+.overlay{position:fixed;inset:0;background:rgba(10,16,30,.5);display:none;align-items:center;justify-content:center;z-index:10;padding:var(--sp)}
+.overlay.open{display:flex}
+.sheet{position:relative;background:var(--card);width:100%;max-width:620px;border-radius:var(--r-lg);padding:var(--sp) var(--sp) 24px;max-height:calc(100vh - 32px);max-height:calc(100dvh - 32px);overflow-y:auto}
+.sheet .x{position:absolute;top:var(--sp);right:var(--sp);width:var(--hit);height:var(--hit);border-radius:50%;border:0;background:var(--paper);color:var(--ink);display:grid;place-items:center;cursor:pointer;z-index:2}
+.sheet .x svg{width:20px;height:20px}
+.sheet .big{width:100%;max-width:360px;aspect-ratio:1;margin:0 auto var(--sp);background:var(--tile);border-radius:var(--r-md);overflow:hidden}
+.sheet .big svg{width:100%;height:100%;display:block}
+.sheet h2{font:800 32px/1.05 "Big Shoulders Display",sans-serif;margin-bottom:var(--gap)}
+.sheet p{color:var(--muted);line-height:1.55;margin-top:var(--sp);font-size:16px;max-width:60ch}
+@media (prefers-reduced-motion:reduce){.bar i{transition:none}}
+</style>
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icon-192.png">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Hanna">
+<meta name="theme-color" content="#14213d">
+</head>
+<body>
+<div class="wrap">
+  <header><h1>Hanna</h1></header>
+
+  <section id="view-library">
+    <div class="seg" id="seg"></div>
+    <div class="flabel">Gerät</div>
+    <div class="filters" id="filters"></div>
+    <div class="count" id="count"></div>
+    <div class="list" id="library"></div>
+  </section>
+
+  <section id="view-training" hidden>
+    <div class="done-banner" id="doneBanner">Alles abgehakt. Training geschafft!</div>
+    <div class="progress" id="progressBox">
+      <div class="progress-top"><span class="sub" id="progressText">0 / 0</span></div>
+      <div class="bar"><i id="bar"></i></div>
+    </div>
+    <div class="list" id="training"></div>
+    <div class="row" id="trainingActions">
+      <button class="btn" id="resetChecks">Haken zurücksetzen</button>
+      <button class="btn" id="clearPlan">Plan leeren</button>
+    </div>
+  </section>
+</div>
+
+<nav class="tabs">
+  <button class="tab active" data-view="library">Übungen</button>
+  <button class="tab" data-view="training">Training</button>
+</nav>
+
+<div class="overlay" id="overlay">
+  <div class="sheet" id="sheet"></div>
+</div>
+
+<script>
+// Strichmännchen-Engine: Posen aus absoluten Winkeln (0 = nach unten, 90 = nach vorne/rechts, 180 = nach oben)
+const SEG = {torso:44, neck:5, head:8, ua:21, fa:20, th:29, sh:29, ft:10};
+const GY = 183;
+function dir(a){const r=a*Math.PI/180;return [Math.sin(r),Math.cos(r)];}
+function add(p,a,len){const d=dir(a);return [p[0]+d[0]*len,p[1]+d[1]*len];}
+const lerp=(a,b,t)=>a+(b-a)*t;
+
+function skeleton(p, front){
+  const P={};
+  const td=dir(p.t), perp=[-td[1],td[0]]; // zeigt bei aufrechtem Oberkörper nach rechts
+  const hw=front?7:0, sw=front?11:0;
+  P.hip=[0,0];
+  P.sh=add(P.hip,p.t,SEG.torso);
+  P.head=add(P.sh,p.t+(p.hd||0),SEG.neck+SEG.head);
+  const hipN=[perp[0]*hw,perp[1]*hw], hipF=[-perp[0]*hw,-perp[1]*hw];
+  const shN=[P.sh[0]+perp[0]*sw,P.sh[1]+perp[1]*sw], shF=[P.sh[0]-perp[0]*sw,P.sh[1]-perp[1]*sw];
+  P.hipN=hipN;P.hipF=hipF;P.shN=shN;P.shF=shF;
+  for(const s of ['N','F']){
+    const l=p[s==='N'?'nl':'fl'], a=p[s==='N'?'na':'fa'];
+    const hp=s==='N'?hipN:hipF, sp=s==='N'?shN:shF;
+    const sc=p[s==='N'?'nls':'fls']||[1,1];
+    P['knee'+s]=add(hp,l[0],SEG.th*sc[0]);
+    P['ankle'+s]=add(P['knee'+s],l[1],SEG.sh*sc[1]);
+    const fl=SEG.ft*(front?0.75:1)*((s==='N'&&p.fs)||1)*(p.ff||1);
+    P['toe'+s]=add(P['ankle'+s],l[2],fl);
+    P['heel'+s]=add(P['ankle'+s],l[2]+180,front?1:3);
+    P['elbow'+s]=add(sp,a[0],SEG.ua);
+    P['hand'+s]=add(P['elbow'+s],a[1],SEG.fa);
+    P['foot'+s]=[lerp(P['heel'+s][0],P['toe'+s][0],.5),lerp(P['heel'+s][1],P['toe'+s][1],.5)];
+    P['thigh'+s]=[lerp(hp[0],P['knee'+s][0],.72),lerp(hp[1],P['knee'+s][1],.72)];
+  }
+  P.mid=[(P.handN[0]+P.handF[0])/2,(P.handN[1]+P.handF[1])/2];
+  return P;
+}
+const GROUND_PTS=['toeN','toeF','heelN','heelF','kneeN','kneeF','handN','handF','elbowN','elbowF','hip','sh'];
+function place(p, front){
+  const P=skeleton(p,front);
+  const gy=p.gy??GY;
+  let ref;
+  if(p.g) ref=P[p.g][1];
+  else { ref=-1e9; for(const k of GROUND_PTS) ref=Math.max(ref,P[k][1]); ref=Math.max(ref,P.head[1]+SEG.head); }
+  if(p.hy!=null) return {x:p.x??100, y:p.hy-(p.air||0)};
+  return {x:p.x??100, y:gy-ref-(p.air||0)};
+}
+// Fuß fest an einem Punkt halten (z. B. hinterer Fuß auf der Box)
+function solveLeg(p,leg,A,ft,fwd){
+  const L1=SEG.th,L2=SEG.sh, H=[p._x,p._y];
+  const vx=A[0]-H[0], vy=A[1]-H[1]; let d=Math.hypot(vx,vy); d=Math.min(Math.max(d,4),L1+L2-0.01);
+  const a0=Math.atan2(vx,vy)*180/Math.PI;
+  const al=Math.acos((L1*L1+d*d-L2*L2)/(2*L1*d))*180/Math.PI;
+  const key=leg==='N'?'nl':'fl';
+  // Knie zeigt bei 'N' nach vorne, bei 'F' nach unten
+  let best=null;
+  for(const th of [a0+al,a0-al]){const kn=add(H,th,L1);const sc=(leg==='N'||fwd)?kn[0]:kn[1];if(!best||sc>best.sc)best={th,kn,sc};}
+  const sh=Math.atan2(A[0]-best.kn[0],A[1]-best.kn[1])*180/Math.PI;
+  return {...p,[key]:[best.th,sh,ft]};
+}
+function pinLeg(S,p){
+  if(!S.ik) return p;
+  for(const k of [].concat(S.ik)){
+    const key=k.leg==='N'?'nl':'fl', ft=k.ft??p[key][2];
+    const A=k.toe?add(k.toe,ft+180,SEG.ft):k.ankle;
+    p=solveLeg(p,k.leg,A,ft,k.fwd);
+  }
+  return p;
+}
+// Keyframes vorbereiten: Hüftposition je Keyframe, Schatten-Posen, Bildausschnitt
+function prep(spec){
+  const front=spec.v==='front';
+  const kf=spec.kf.map(k=>{let q={...k};const o=place(q,front);q._x=o.x;q._y=o.y;q=pinLeg(spec,q);return q;});
+  const S={...spec,front,kf};
+  // Schatten: Startpose + die am stärksten abweichende Pose
+  const diff=(a,b)=>{let d=Math.abs(a._x-b._x)+Math.abs(a._y-b._y)+Math.abs(a.t-b.t);for(const k of ['na','fa','nl','fl'])a[k].forEach((v,i)=>d+=Math.abs(v-b[k][i]));return d;};
+  let mi=0,md=-1;kf.forEach((k,i)=>{const d=diff(kf[0],k);if(d>md){md=d;mi=i;}});
+  S.ghosts=[...new Set([0,mi])].map(i=>interp(kf[i],kf[i],0));
+  // Bildausschnitt aus allen Positionen der Bewegung
+  let x0=1e9,x1=-1e9,y0=1e9,y1=GY+7;
+  const inc=(x,y)=>{x0=Math.min(x0,x);x1=Math.max(x1,x);y0=Math.min(y0,y);y1=Math.max(y1,y+4);};
+  const dur=S.d||1600;
+  for(let i=0;i<40;i++){
+    const p=poseAt(S,dur*i/40), P=skeleton(p,front);
+    for(const k in P){inc(P[k][0]+p._x,P[k][1]+p._y);}
+    inc(P.head[0]+p._x-SEG.head,P.head[1]+p._y-SEG.head-2);inc(P.head[0]+p._x+SEG.head,P.head[1]+p._y);
+    for(const pr of S.props||[]) if(pr[0]==='kb'||pr[0]==='db'){const q=P[pr[1]||'handN']||P.handN;inc(q[0]+p._x-10,q[1]+p._y-8);inc(q[0]+p._x+10,q[1]+p._y);}
+  }
+  for(const pr of S.props||[]){const [t,a,b,c]=pr;
+    if(t==='box'||t==='bench'||t==='boxBack'){inc(a,GY-c-10);inc(a+b,GY);} if(t==='step'){inc(a,GY-12);inc(a+b,GY);}
+    if(t==='plate'){inc(a-17,GY);inc(a+17,GY);}
+    if(t==='plateFront'){inc(a-20,GY+12);inc(a+20,GY+12);} if(t==='wall'){inc(a-3,GY);}
+  }
+  const pad=9, bottom=y1;
+  let w=x1-x0+pad*2, h=bottom-(y0-pad);
+  const size=Math.max(w,h,90);
+  const cx=(x0+x1)/2;
+  S.vb=[cx-size/2,bottom-size,size,size].map(v=>+v.toFixed(1));
+  return S;
+}
+function interp(a,b,t){
+  const o={};
+  for(const k of ['t','hd','fs','ff']) o[k]=lerp(a[k]??(k==='fs'||k==='ff'?1:0),b[k]??(k==='fs'||k==='ff'?1:0),t);
+  o.kbw=lerp(a.kbw??1,b.kbw??1,t);
+  o.kbz=lerp(a.kbz??0,b.kbz??0,t);
+  for(const k of ['na','fa','nl','fl']) o[k]=a[k].map((v,i)=>lerp(v,b[k][i],t));
+  for(const k of ['nls','fls']){const A=a[k]||[1,1],B=b[k]||[1,1];o[k]=[lerp(A[0],B[0],t),lerp(A[1],B[1],t)];}
+  o._x=lerp(a._x,b._x,t);o._y=lerp(a._y,b._y,t);
+  return o;
+}
+function poseAt(S,time){
+  const n=S.kf.length, dur=S.d||1600;
+  const w=S.kf.map(k=>k.w||1), tot=w.reduce((a,b)=>a+b,0);
+  let u=((time%dur)/dur)*tot, i=0;
+  while(i<n-1&&u>w[i]){u-=w[i];i++;}
+  const a=S.kf[i], b=S.kf[(i+1)%n];
+  let t=u/w[i];
+  const h=a.hold??S.hold??0;            // kurze Pause an jeder Umkehrposition
+  t=t<h?0:(t-h)/(1-h);
+  const e=a.lin?t:(1-Math.cos(Math.PI*t))/2;
+  let o=interp(a,b,e);
+  // Zwischen zwei Bodenposen auf gleicher Höhe die Füße am Boden halten (kein Einsinken)
+  if(!a.air&&!b.air&&a.hy==null&&b.hy==null&&(a.gy??GY)===(b.gy??GY)&&(a.g||'')===(b.g||'')){
+    const q=place({...o,g:a.g,gy:a.gy},S.front);o._y=q.y;
+  }
+  return pinLeg(S,o);
+}
+const C={ink:'var(--ink)',far:'var(--far)',ghost:'var(--ghost)',acc:'var(--accent)',eqF:'var(--pink-soft)',prop:'var(--prop)',propD:'var(--propd)',floor:'var(--line)'};
+function pt(P,o,name){
+  if(Array.isArray(name)) return name;
+  const q=P[name];return [q[0]+o[0],q[1]+o[1]];
+}
+const f1=v=>v.toFixed(1);
+const L=(a,b,c,w=5)=>`<line x1="${f1(a[0])}" y1="${f1(a[1])}" x2="${f1(b[0])}" y2="${f1(b[1])}" stroke="${c}" stroke-width="${w}" stroke-linecap="round"/>`;
+const PL=(pts,c,w=5)=>`<polyline points="${pts.map(q=>f1(q[0])+','+f1(q[1])).join(' ')}" fill="none" stroke="${c}" stroke-width="${w}" stroke-linecap="round" stroke-linejoin="round"/>`;
+function body(S,p,cNear,cFar,ghost){
+  const P=skeleton(p,S.front), o=[p._x,p._y], g=n=>pt(P,o,n);
+  const lw=ghost?4:5;
+  const limb=(s,c)=>PL([g(s==='N'?'hipN':'hipF'),g('knee'+s),g('ankle'+s)],c,lw)+L(g('heel'+s),g('toe'+s),c,lw-.5)+PL([g(s==='N'?'shN':'shF'),g('elbow'+s),g('hand'+s)],c,lw-.5);
+  const dots=(s,c)=>ghost?'':['knee','elbow'].map(j=>{const q=g(j+s);return `<circle cx="${f1(q[0])}" cy="${f1(q[1])}" r="3.6" fill="${c}"/>`;}).join('');
+  let out=limb('F',cFar)+dots('F',cFar);
+  out+=L(g('hip'),g('sh'),cNear,lw+.5);
+  if(S.front){out+=L(g('hipF'),g('hipN'),cNear,lw);out+=L(g('shF'),g('shN'),cNear,lw);}
+  const h=g('head');
+  out+=`<circle cx="${f1(h[0])}" cy="${f1(h[1])}" r="${SEG.head}" fill="${cNear}"/>`;
+  out+=limb('N',cNear)+dots('N',cNear);
+  return {svg:out,g};
+}
+function renderFig(S,time,col=C){
+  const p=poseAt(S,time);
+  let back=S.noFloor?'':`<line x1="-60" y1="${GY+2}" x2="260" y2="${GY+2}" stroke="${col.floor}" stroke-width="3" stroke-linecap="round"/>`, held='';
+  for(const gp of S.ghosts||[]) back+=body(S,gp,col.ghost,col.ghost,true).svg;
+  const B=body(S,p,col.ink,(S.front&&!S.fm)?col.ink:col.far,false), g=B.g;
+  let under='';
+  for(const pr of S.props||[]){
+    const [t,...a]=pr;
+    if(t==='box') back+=`<rect x="${a[0]+1}" y="${GY+2-a[2]}" width="${a[1]-2}" height="${a[2]-2}" rx="3" fill="${col.eqF}" stroke="${col.acc}" stroke-width="2.5"/>`;
+    if(t==='bench'){const [x,w,h]=a;const top=GY+1-h;back+=`<rect x="${x+4}" y="${top+5}" width="5" height="${h-5}" rx="1.5" fill="${col.eqF}" stroke="${col.acc}" stroke-width="2"/><rect x="${x+w-9}" y="${top+5}" width="5" height="${h-5}" rx="1.5" fill="${col.eqF}" stroke="${col.acc}" stroke-width="2"/><rect x="${x}" y="${top}" width="${w}" height="7" rx="3" fill="${col.eqF}" stroke="${col.acc}" stroke-width="2.5"/>`;}
+    if(t==='boxBack'){const [x,w,h]=a;const up=10;back+=`<g opacity="0.55"><rect x="${x}" y="${GY+1-h-up}" width="${w}" height="${h}" rx="3" fill="${col.eqF}" stroke="${col.acc}" stroke-width="2.5"/></g>`;}
+    if(t==='floorPlane'){back+=`<rect x="-60" y="${GY-12}" width="320" height="30" fill="${col.floor}" opacity="0.45"/>`;}
+    if(t==='plateFront'){back+=`<ellipse cx="${a[0]}" cy="${GY+11}" rx="19" ry="4.5" fill="${col.eqF}" stroke="${col.acc}" stroke-width="2.2"/>`;}
+    if(t==='floorband'){const x=a[0];back+=`<line x1="${x-3}" y1="${GY+3}" x2="${x+3}" y2="${GY-7}" stroke="${col.acc}" stroke-width="3.5" stroke-linecap="round"/>`;}
+    if(t==='step') back+=`<rect x="${a[0]+1}" y="${GY+2-12}" width="${a[1]-2}" height="10.5" rx="4" fill="${col.eqF}" stroke="${col.acc}" stroke-width="2.5"/>`;
+    if(t==='plate') back+=`<rect x="${a[0]-17}" y="${GY-4}" width="34" height="6" rx="3" fill="${col.eqF}" stroke="${col.acc}" stroke-width="2.2"/>`;
+    if(t==='wall') back+=`<line x1="${a[0]}" y1="20" x2="${a[0]}" y2="${GY+2}" stroke="${col.propD}" stroke-width="4" stroke-linecap="round"/>`;
+    if(t==='band'){const A=g(a[0]),Bp=g(a[1]);held+=L(A,Bp,col.acc,3);}
+    if(t==='bandB'){const A=g(a[0]),Bp=g(a[1]);under+=L(A,Bp,col.acc,3);}
+    if(t==='loop'){const A=g(a[0]);held+=`<ellipse cx="${f1(A[0])}" cy="${f1(A[1])}" rx="${S.front?16:5}" ry="${S.front?3.5:6}" fill="none" stroke="${col.acc}" stroke-width="3"/>`;}
+    if(t==='kb'){const A=a[0]==='swap'?(()=>{const F=g('handF'),N=g('handN'),w=p.kbw;return [F[0]+(N[0]-F[0])*w,F[1]+(N[1]-F[1])*w];})():g(a[0]);const kbs=`<path d="M${f1(A[0]-4.5)} ${f1(A[1]+3.5)} Q${f1(A[0])} ${f1(A[1]-5)} ${f1(A[0]+4.5)} ${f1(A[1]+3.5)}" fill="none" stroke="${col.acc}" stroke-width="2.6" stroke-linecap="round"/><circle cx="${f1(A[0])}" cy="${f1(A[1]+8.5)}" r="7" fill="${col.eqF}" stroke="${col.acc}" stroke-width="2.4"/>`;if(p.kbz>0.5)under+=kbs;else held+=kbs;}
+    if(t==='db'){for(const h of (a.length?a:['handN','handF'])){const A=g(h);held+=`<rect x="${f1(A[0]-7)}" y="${f1(A[1]-1.5)}" width="14" height="3" rx="1.5" fill="${col.acc}"/><rect x="${f1(A[0]-10)}" y="${f1(A[1]-5)}" width="4.5" height="10" rx="1.5" fill="${col.eqF}" stroke="${col.acc}" stroke-width="1.8"/><rect x="${f1(A[0]+5.5)}" y="${f1(A[1]-5)}" width="4.5" height="10" rx="1.5" fill="${col.eqF}" stroke="${col.acc}" stroke-width="1.8"/>`;}}
+  }
+  return back+under+B.svg+held;
+}
+
+// Übungen + Animationen
+const S={t:180,na:[8,12],fa:[-8,4],nl:[2,0,90],fl:[-2,0,90]};          // Seitenansicht stehend
+const F={t:180,na:[12,6],fa:[-12,-6],nl:[4,0,90],fl:[-4,0,-90]};        // Frontansicht stehend
+const s=o=>({...S,...o}), f=o=>({...F,...o});
+const GOB={na:[30,170],fa:[25,165]};                                     // Gewicht vor der Brust
+const SQ={t:140,nl:[82,-22,90],fl:[80,-24,90],na:[45,175],fa:[40,170]};  // Kniebeuge unten
+const LUNGE={nl:[90,0,90],fl:[-25,-95,60]};                              // Ausfallschritt unten
+const SPLIT_TOP={nl:[22,0,90],fl:[-22,-38,70]};
+const FSQ={nl:[45,-20,90],fl:[-45,20,-90]};                               // Front: Kniebeuge (breit)
+
+const EXERCISES = [
+// ---------- KRAFT ----------
+{id:'x1',name:'Tibialis Raises',cat:'kraft',equip:['Box','Kettlebell'],desc:'Auf einer Box sitzen, Beine ausgestreckt, die Füße ragen über die Kante. Einen Fuß in den Griff der Kettlebell stecken, die Fußspitze zum Schienbein anziehen und langsam wieder absenken.',
+ anim:{d:1600,props:[['box',36,90,40],['kb','toeN']],kf:[s({x:70,t:186,nl:[90,90,92],fl:[90,90,92],na:[-35,-25],fa:[-40,-30],g:'hip',gy:141}),s({x:70,t:186,nl:[90,90,165],fl:[90,90,165],na:[-35,-25],fa:[-40,-30],g:'hip',gy:141})]}},
+{id:'x4',name:'Single Leg Romanian Deadlift',cat:'kraft',equip:['Kettlebell'],desc:'Kettlebell in der Hand gegenüber dem Standbein halten. Hüfte nach hinten schieben, Rücken gerade, freies Bein streckt sich nach hinten. Steigerung: je eine Kurzhantel pro Hand.',
+ anim:{d:2200,props:[['kb','handF']],kf:[s({na:[-6,4],fa:[2,2],fl:[-5,-15,60]}),s({t:95,nl:[8,-4,90],fl:[-92,-92,-10],na:[-20,10],fa:[2,2],hd:-10})]}},
+{id:'x5',name:'Knees-Over-Toes Split Squats',cat:'kraft',equip:['Kurzhanteln'],desc:'Geteilter Stand mit einer Kurzhantel in jeder Hand, hinteres Bein weit hinten auf den Zehen. Das vordere Knie weit über die Zehen nach vorne schieben und tief absenken, dann über das vordere Bein wieder hochdrücken.',
+ anim:{d:2000,props:[['db']],kf:[s({x:100,na:[2,2],fa:[-2,-2]}),s({x:104,t:176,nl:[75,-38,90],fl:[-35,-85,60],na:[2,2],fa:[-2,-2]})]}},
+{id:'x8',name:'Hüftbeugerheben',cat:'kraft',equip:['Kettlebell'],desc:'Fuß in den Griff der Kettlebell stecken. Knie nach vorne oben ziehen, dann nach außen öffnen, zurück nach innen führen und absenken.',
+ anim:{v:'front',d:3600,props:[['kb','toeN']],kf:[
+  f({nl:[4,0,90],na:[35,-35],fa:[-35,35],g:'toeF',w:.8}),
+  f({nl:[2,0,90],nls:[0.12,0.9],na:[35,-35],fa:[-35,35],g:'toeF',w:1.1}),
+  f({nl:[95,0,90],na:[35,-35],fa:[-35,35],g:'toeF',w:1.2}),
+  f({nl:[2,0,90],nls:[0.12,0.9],na:[35,-35],fa:[-35,35],g:'toeF',w:1.1})]}},
+{id:'x9',name:'Fuß-Inversion',cat:'kraft',equip:['Widerstandsband'],desc:'Im Sitzen die Beine überschlagen, sodass die Wade auf dem Oberschenkel des anderen Beins liegt. Das Band läuft vom oberen Fuß zum unteren Fuß. Den oberen Fuß gegen den Widerstand nach innen und oben drehen und wieder zurück.',
+ anim:{v:'front',d:1700,props:[['box',68,64,42],['bandB','toeN','toeF']],kf:[
+  f({x:100,nl:[60,-95,-95],nls:[0.55,1],fs:1.4,fl:[0,0,-90],fls:[0.3,1],na:[35,-40],fa:[-35,40],g:'hip',gy:140}),
+  f({x:100,nl:[60,-95,-165],nls:[0.55,1],fs:1.4,fl:[0,0,-90],fls:[0.3,1],na:[35,-40],fa:[-35,40],g:'hip',gy:140,w:1.2})]}},
+{id:'x10',name:'Bulgarian Split Squats',cat:'kraft',equip:['Box','Kurzhanteln'],desc:'Hinterer Fuß auf der Box, eine Kurzhantel in jeder Hand. Langsam tief in das vordere Bein beugen, das hintere Knie zeigt Richtung Boden, dann über das vordere Bein wieder hochdrücken.',
+ anim:{d:2000,ik:{leg:'F',ankle:[64,147],ft:-70},props:[['box',38,34,32],['db']],kf:[s({x:96,nl:[20,0,90],fl:[-35,-55,-20],na:[2,2],fa:[-2,-2],g:'heelN'}),s({x:96,nl:[85,-5,90],fl:[-5,-70,-30],na:[2,2],fa:[-2,-2],g:'heelN'})]}},
+{id:'x11',name:'Wadenheben auf dem Stepper',cat:'kraft',equip:['Kurzhanteln','Stepper'],desc:'Auf einem Bein mit dem Fußballen auf der Kante des Steppers stehen, Kurzhantel in der Hand auf der Seite des Trainingsbeins, die freie Hand hilft vorne bei der Balance. Ferse langsam unter die Kante absenken und ganz auf die Zehenspitzen hochdrücken.',
+ anim:{d:1600,props:[['step',100,40],['db','handN']],kf:[s({nl:[2,0,120],fl:[15,-70,30],na:[2,2],fa:[40,70],g:'toeN',gy:171}),s({nl:[2,0,35],fl:[15,-70,30],na:[2,2],fa:[40,70],g:'toeN',gy:171})]}},
+{id:'x15',name:'Fuß-Eversion',cat:'kraft',equip:['Widerstandsband'],desc:'Im Sitzen ein Widerstandsband um beide Fußmitten legen. Beide Füße gegen den Widerstand nach außen drehen und langsam zurück in die Ausgangsposition.',
+ anim:{v:'front',d:1700,props:[['box',68,64,42],['bandB','toeN','toeF']],kf:[
+  f({x:100,nl:[0,0,90],nls:[0.3,1],fl:[0,0,-90],fls:[0.3,1],ff:0.3,na:[30,-20],fa:[-30,20],g:'hip',gy:140}),
+  f({x:100,nl:[0,0,90],nls:[0.3,1],fl:[0,0,-90],fls:[0.3,1],ff:1.5,na:[30,-20],fa:[-30,20],g:'hip',gy:140,w:1.2})]}},
+{id:'x25',name:'Goblet Squats',cat:'kraft',equip:['Hantelscheibe','Kettlebell'],desc:'Kettlebell vor der Brust, Fersen auf einer Hantelscheibe für eine leichte Erhöhung. Tief in die Hocke, Brust aufrecht, Knie folgen den Zehen.',
+ anim:{d:2400,ik:[{leg:'F',ankle:[99,178],fwd:true},{leg:'N',ankle:[101,178],fwd:true}],props:[['plate',86],['kb','mid']],kf:[
+  s({x:98,...GOB,nl:[2,0,72],fl:[0,0,72]}),
+  s({x:82,...SQ,...GOB,nl:[82,-22,68],fl:[80,-24,68]})]}},
+{id:'x26',name:'Step-ups',cat:'kraft',equip:['Box','Kurzhanteln'],desc:'Ein Fuß steht fest auf der Box. Über dieses Bein hochdrücken, das andere Knie nach oben ziehen und kontrolliert wieder absteigen. Kurzhanteln in den Händen.',
+ anim:{d:2200,ik:{leg:'N',toe:[130,162],ft:90},props:[['box',108,46,22],['db']],kf:[
+  s({x:96,hy:125.3,nl:[60,-20,90],fl:[-6,0,90],na:[2,2],fa:[-2,-2]}),
+  s({x:118,hy:104,nl:[0,0,90],fl:[70,-15,90],na:[2,2],fa:[-2,-2],w:1.1})]}},
+{id:'x27',name:'Ausfallschritte',cat:'kraft',equip:['Kettlebell','Kurzhanteln'],desc:'Eine Kurzhantel in jeder Hand (alternativ eine Kettlebell vor der Brust). Großer Schritt nach vorne, das hintere Knie sinkt Richtung Boden, dann über die vordere Ferse zurück in den Stand drücken.',
+ anim:{d:2000,props:[['db']],kf:[s({x:88,na:[2,2],fa:[-2,-2]}),s({x:104,...LUNGE,na:[2,2],fa:[-2,-2]})]}},
+{id:'x31',name:'Peterson Step-downs',cat:'kraft',equip:['Kettlebell','Stepper'],desc:'Kettlebell vor der Brust. Auf dem Stepper stehen, das Standbein-Knie wandert nach vorne und du gehst tief runter. Das freie Bein schwebt vorne knapp über dem Boden, ohne ihn zu berühren.',
+ anim:{d:2000,props:[['step',72,40],['kb','mid']],kf:[
+  s({x:88,fl:[2,0,90],nl:[25,15,100],na:[30,170],fa:[25,165],g:'toeF',gy:171}),
+  s({x:80,t:162,fl:[74,-38,90],nl:[62,48,105],na:[38,172],fa:[33,167],g:'toeF',gy:171,w:1.2})]}},
+{id:'x60',name:'Step-downs',cat:'kraft',equip:['Box','Kettlebell'],desc:'Mit einer Kettlebell vor der Brust seitlich auf der Box stehen, das freie Bein hängt parallel neben dem Standbein. Mit dem Standbein auf der Box in die Kniebeuge gehen, bis der freie Fuß kurz den Boden berührt, dann wieder hochdrücken.',
+ anim:{d:2000,ik:{leg:'F',toe:[106,162],ft:90,fwd:true},props:[['box',72,40,22],['kb','mid']],kf:[
+  s({x:96,hy:104,...GOB,nl:[0,0,90],fl:[0,0,90]}),
+  s({x:86,hy:125.5,t:166,...GOB,nl:[2,0,90],fl:[0,0,90],w:1.1})]}},
+{id:'x33',name:'Soleus Raises',cat:'kraft',equip:['Kurzhanteln','Stepper'],desc:'Kurzhantel in der Hand auf der Seite des vorderen Beins. Ein Fuß vorne auf dem Stepper, das andere Bein weit hinten auf dem Boden. Körper und hinteres Bein bleiben fest, nur die vordere Ferse hebt sich: mit gebeugtem Knie auf die Zehenspitzen und langsam absenken.',
+ anim:{d:1800,ik:[{leg:'F',ankle:[63,175.5],ft:40,fwd:true},{leg:'N',toe:[124.4,171]}],props:[['step',112,40],['db','handN']],kf:[
+  s({x:102,hy:135,t:172,na:[8,4],fa:[35,95],nl:[68,-30,90],fl:[-30,-10,40]}),
+  s({x:102,hy:135,t:172,na:[8,4],fa:[35,95],nl:[68,-30,42],fl:[-30,-10,40],w:1.2})]}},
+{id:'x34',name:'Single Leg Kettlebell Handoffs',cat:'kraft',equip:['Kettlebell'],desc:'Auf einem Bein stehen, die Arme hängen locker neben dem Körper. Die Kettlebell vor dem Körper von der linken in die rechte Hand führen und wieder zurück.',
+ anim:{v:'front',d:2600,props:[['kb','swap']],kf:[
+  f({nl:[6,0,90],nls:[1,0.55],na:[12,4],fa:[-12,-4],kbw:0,g:'toeF'}),
+  f({nl:[6,0,90],nls:[1,0.55],na:[-4,-22],fa:[4,22],kbw:0.5,g:'toeF',w:.7}),
+  f({nl:[6,0,90],nls:[1,0.55],na:[12,4],fa:[-12,-4],kbw:1,g:'toeF'}),
+  f({nl:[6,0,90],nls:[1,0.55],na:[-4,-22],fa:[4,22],kbw:0.5,g:'toeF',w:.7})]}},
+{id:'x35',name:'Around the World',cat:'kraft',equip:['Kettlebell'],desc:'Die Kettlebell um die Hüfte kreisen lassen: vorne und hinter dem Rücken jeweils in die andere Hand übergeben.',
+ anim:{v:'front',d:2800,props:[['kb','swap']],kf:[
+  f({na:[-4,-22],fa:[4,22],kbw:0.5,kbz:0}),
+  f({na:[30,12],fa:[-12,-4],kbw:1,kbz:0}),
+  f({na:[-4,-22],fa:[4,22],kbw:0.5,kbz:1}),
+  f({na:[12,4],fa:[-30,-12],kbw:0,kbz:1})]}},
+{id:'x41',name:'Kniebeugen mit Band',cat:'kraft',equip:['Widerstandsband'],desc:'Band über den Knien, Füße hüftbreit, Arme nach vorne. Hüfte nach hinten schieben und tief in die Hocke gehen, die Knie aktiv gegen das Band nach außen drücken, dann wieder hochdrücken.',
+ anim:{d:1800,props:[['loop','thighN']],kf:[s({na:[60,80],fa:[55,75]}),s({...SQ,na:[80,90],fa:[75,85]})]}},
+{id:'x42',name:'Standing March mit Band',cat:'kraft',equip:['Widerstandsband'],desc:'Band um die Füße, abwechselnd die Knie langsam und kontrolliert gegen den Widerstand hochziehen, kurz halten und den Fuß kontrolliert wieder absetzen.',
+ anim:{d:4000,hold:0.35,props:[['band','ankleN','ankleF']],kf:[s({}),s({nl:[90,0,80],na:[-30,10],fa:[30,80]}),s({}),s({fl:[90,0,80],na:[30,80],fa:[-30,10]})]}},
+{id:'x44',name:'Seated Leg Raises mit Band',cat:'kraft',equip:['Widerstandsband'],desc:'Aufrecht sitzen, Hände hinter dem Körper abstützen, Beine gestreckt, Band um beide Füße. Ein Bein gestreckt gegen den Widerstand anheben und langsam wieder absenken.',
+ anim:{d:1600,props:[['band','ankleN','ankleF']],kf:[{x:70,t:172,na:[-25,-15],fa:[-30,-20],nl:[90,90,170],fl:[90,90,170]},{x:70,t:172,na:[-25,-15],fa:[-30,-20],nl:[110,110,180],fl:[90,90,170]}]}},
+{id:'x45',name:'Glute Bridge mit Band',cat:'kraft',equip:['Widerstandsband'],desc:'Rückenlage, Füße aufgestellt, Band über den Knien. Hüfte hochdrücken, bis Schultern, Hüfte und Knie eine Linie bilden, Po anspannen, kurz halten und langsam absenken.',
+ anim:{d:1800,props:[['loop','thighN']],kf:[{x:110,t:-90,na:[90,90],fa:[92,92],nl:[140,25,90],fl:[138,27,90]},{x:110,t:-62,na:[95,95],fa:[97,97],nl:[110,8,90],fl:[108,10,90]}]}},
+{id:'x69',name:'Single Leg Glute Bridge mit Band',cat:'kraft',equip:['Widerstandsband'],desc:'Rückenlage, Band um beide Füße. Hüfte hochdrücken und oben halten. Aus dem Hold abwechselnd ein Knie gegen das Band zur Brust ziehen und den Fuß wieder absetzen. Die Hüfte bleibt die ganze Zeit oben und gerade.',
+ anim:{d:3200,props:[['band','ankleN','ankleF']],kf:[{x:110,t:-62,na:[95,95],fa:[97,97],nl:[110,8,90],fl:[108,10,90]},{x:110,t:-62,na:[95,95],fa:[97,97],nl:[172,95,150],fl:[108,10,90],w:1.2},{x:110,t:-62,na:[95,95],fa:[97,97],nl:[110,8,90],fl:[108,10,90]},{x:110,t:-62,na:[95,95],fa:[97,97],nl:[110,8,90],fl:[170,97,150],w:1.2}]}},
+{id:'x46',name:'Side Steps mit Band',cat:'kraft',equip:['Widerstandsband'],desc:'Band um die Oberschenkel, tief in die Hocke wie bei einer Kniebeuge. Linkes Bein setzt nach außen auf den Boden, rechtes Bein zieht nach und setzt fast geschlossen neben dem linken ab. Dann umgekehrt: rechtes Bein setzt zur anderen Seite, linkes zieht nach, bis die Füße fast geschlossen sind. Die ganze Zeit tief bleiben, Knie bleiben über den Füßen und gegen das Band stabil halten.',
+ anim:{v:'front',d:4400,props:[['band','thighN','thighF']],kf:[f({x:83,hy:142,nl:[10.4,-7,90],nls:[0.575,0.855],fl:[-10.4,7,-90],fls:[0.575,0.855],na:[35,-35],fa:[-35,35]}),f({x:91,hy:142,nl:[29.8,11.6,90],nls:[0.541,0.718],fl:[-20.7,-4.2,-90],fls:[0.605,0.851],na:[35,-35],fa:[-35,35]}),f({x:100,hy:142,nl:[30.9,16.3,90],nls:[0.659,0.884],fl:[-30.9,-16.3,-90],fls:[0.659,0.884],na:[35,-35],fa:[-35,35]}),f({x:109,hy:142,nl:[20.7,4.2,90],nls:[0.605,0.851],fl:[-18.7,1.7,-90],fls:[0.495,0.704],na:[35,-35],fa:[-35,35]}),f({x:117,hy:142,nl:[10.4,-7,90],nls:[0.575,0.855],fl:[-10.4,7,-90],fls:[0.575,0.855],na:[35,-35],fa:[-35,35]}),f({x:109,hy:142,nl:[20.7,4.2,90],nls:[0.605,0.851],fl:[-29.8,-11.6,-90],fls:[0.541,0.718],na:[35,-35],fa:[-35,35]}),f({x:100,hy:142,nl:[30.9,16.3,90],nls:[0.659,0.884],fl:[-30.9,-16.3,-90],fls:[0.659,0.884],na:[35,-35],fa:[-35,35]}),f({x:91,hy:142,nl:[21.7,1.7,90],nls:[0.505,0.704],fl:[-20.7,-4.2,-90],fls:[0.605,0.851],na:[35,-35],fa:[-35,35]})]}},
+{id:'x70',name:'Standing Kickbacks mit Band',cat:'kraft',equip:['Widerstandsband'],desc:'Gerade stehen. Das Band liegt beim Standbein um die Fußmitte, beim anderen Bein um das Fußgelenk. Das Standbein steht fest auf dem Boden. Das andere Bein gegen den Widerstand nach hinten oben ziehen, das Knie darf sich dabei anwinkeln, kurz halten und langsam zurück in den geraden Stand führen. Oberkörper bleibt aufrecht, kein Hohlkreuz.',
+ anim:{d:2600,hold:0.35,props:[['band','ankleN','footF']],kf:[s({g:'toeF'}),s({t:172,nl:[-50,-105,60],g:'toeF',w:1.2})]}},
+{id:'x57',name:'Curtsy Lunges',cat:'kraft',equip:['Kettlebell'],desc:'Eine Kettlebell vor der Brust. Ein Bein bleibt fest am Boden, das andere setzt diagonal hinter das Standbein wie bei einem Knicks. Dann tief nach unten beugen und wieder hoch.',
+ anim:{v:'front',fm:true,d:2400,props:[['kb','mid']],kf:[
+  f({x:100,hy:125,nl:[4,0,90],fl:[-4,0,-90],na:[-15,-160],fa:[15,160]}),
+  f({x:100,hy:146,nl:[3,-3,90],nls:[0.64,0.64],fl:[25,56,90],fls:[1,0.53],na:[-15,-160],fa:[15,160],w:1.1})]}},
+{id:'x58',name:'Reverse Lunges',cat:'kraft',equip:['Kurzhanteln'],desc:'Eine Kurzhantel in jeder Hand. Großer Schritt nach hinten, das hintere Knie sinkt Richtung Boden, dann über das vordere Bein zurück in den Stand.',
+ anim:{d:2000,props:[['db']],kf:[s({x:100,na:[2,2],fa:[-2,-2]}),s({x:96,...LUNGE,na:[2,2],fa:[-2,-2]})]}},
+
+// ---------- PLYOMETRISCH ----------
+{id:'x16',name:'Pogo Jumps',cat:'plyo',equip:[],desc:'Kleine, schnelle Sprünge aus den Fußgelenken, Knie fast gestreckt.',
+ anim:{d:500,kf:[s({nl:[4,-2,90],fl:[0,-4,90],na:[20,70],fa:[15,65]}),s({nl:[2,0,40],fl:[-2,0,40],na:[20,70],fa:[15,65],air:12})]}},
+{id:'x17',name:'Side to Side Jumps',cat:'plyo',equip:[],desc:'Beidbeinig schnell seitlich hin und her springen.',
+ anim:{v:'front',d:1000,kf:[f({x:84,nl:[4,-4,90],fl:[-4,4,-90],na:[30,80],fa:[-30,-80]}),f({x:100,air:16,na:[30,80],fa:[-30,-80]}),f({x:116,nl:[4,-4,90],fl:[-4,4,-90],na:[30,80],fa:[-30,-80]}),f({x:100,air:16,na:[30,80],fa:[-30,-80]})]}},
+{id:'x18',name:'Side Skates',cat:'plyo',equip:[],desc:'Eisschnellläufer-Sprünge: seitlich von einem Bein aufs andere springen und weich landen. Das freie Bein schwingt dabei hinter dem Standbein vorbei.',
+ anim:{v:'front',d:1400,kf:[f({x:76,t:170,fl:[-10,5,-90],nl:[-30,-50,90],na:[-40,-60],fa:[-30,-50]}),f({x:100,air:20,nl:[10,0,90],fl:[-10,0,-90],na:[60,90],fa:[-60,-90]}),f({x:124,t:190,nl:[10,-5,90],fl:[30,50,-90],na:[40,60],fa:[30,50]}),f({x:100,air:20,nl:[10,0,90],fl:[-10,0,-90],na:[60,90],fa:[-60,-90]})]}},
+{id:'x19',name:'Lunge Jumps',cat:'plyo',equip:[],desc:'Aus dem Ausfallschritt hochspringen und in der Luft die Beine wechseln. Auch als Split Squat Hops bekannt.',
+ anim:{d:1200,kf:[s({...LUNGE,na:[-30,0],fa:[40,90]}),s({nl:[20,-10,60],fl:[-20,-30,60],air:22,na:[20,80],fa:[-20,0]}),s({fl:[90,0,90],nl:[-25,-95,60],na:[40,90],fa:[-30,0]}),s({nl:[-20,-30,60],fl:[20,-10,60],air:22,na:[-20,0],fa:[20,80]})]}},
+{id:'x22',name:'Single Leg Box Jumps',cat:'plyo',equip:['Box'],desc:'Mit beiden Beinen abspringen und mit einem Bein auf der Box landen. Stabil stehen, dann wieder heruntersteigen.',
+ anim:{d:1900,props:[['box',118,54,38]],kf:[s({x:78,...SQ,na:[-40,-20],fa:[-45,-25]}),s({x:110,t:170,nl:[60,-30,60],fl:[55,-32,60],na:[160,170],fa:[155,165],air:62,w:.7}),s({x:129,t:150,nl:[60,-25,90],fl:[10,-80,30],na:[50,80],fa:[40,70],gy:144}),s({x:142,fl:[10,-80,30],gy:144,w:.6}),s({x:104,gy:142,nl:[2,0,70],fl:[-2,0,70],w:.25}),s({x:80,w:.2})]}},
+{id:'x23',name:'Lunge to High Knee',cat:'kraft',equip:['Kurzhanteln'],desc:'Eine Kurzhantel in der Hand gegenüber dem Knie, das nach oben geht. Aus dem Ausfallschritt über das vordere Bein kontrolliert hochdrücken und das hintere Knie bis über Hüfthöhe ziehen, kurz halten, dann zurück in den Ausfallschritt. Einstieg: ohne Gewicht.',
+ anim:{d:1900,props:[['db','handN']],kf:[
+  s({x:100,...LUNGE,na:[4,2],fa:[30,80]}),
+  s({x:127,nl:[0,0,90],fl:[100,5,75],na:[2,2],fa:[-35,10],w:1.2})]}},
+{id:'x68',name:'Copenhagen Plank',cat:'kraft',equip:['Box'],desc:'Seitstütz auf dem rechten Unterarm, Ellbogen direkt unter der Schulter, der Körper zeigt seitlich zum Boden. Das obere (linke) Bein liegt gestreckt auf der Box, der linke Arm ist nach oben ausgestreckt. Das untere (rechte) Bein nach vorne anwinkeln, 90 Grad in Hüfte und Knie. Hüfte oben halten, sodass Kopf, Hüfte und oberes Bein eine Linie bilden. Position halten, ohne Bewegung.',
+ anim:{v:'front',d:2000,props:[['box',110,46,34]],kf:[f({x:70,t:-86,hd:0,na:[180,180],fa:[0,-90],nl:[83,83,90],fl:[8,90,10],fls:[0.32,1],g:'elbowF'}),f({x:70,t:-86,hd:0,na:[180,180],fa:[0,-90],nl:[83,83,90],fl:[8,90,10],fls:[0.32,1],g:'elbowF'})]}},
+{id:'x24',name:'Single Leg High Knee',cat:'plyo',equip:['Box'],desc:'Box steht vorne: ein Fuß auf der Box. Explosiv über dieses Bein hochdrücken, bis du kurz abhebst, und dabei das andere Knie kraftvoll nach oben schwingen. Armeinsatz wie beim Laufen.',
+ anim:{d:1200,ik:{leg:'N',toe:[132,148],ft:90},props:[['box',112,46,34]],kf:[s({x:96,hy:126,nl:[60,-20,90],fl:[-15,-5,90],na:[40,90],fa:[-30,0]}),s({x:110,hy:102,nl:[30,-15,90],fl:[20,-75,40],na:[0,50],fa:[0,50],w:.5}),s({x:122,hy:84,nl:[0,0,40],fl:[100,5,70],na:[-35,10],fa:[45,100],w:.9}),s({x:110,hy:102,nl:[30,-15,90],fl:[20,-75,40],na:[0,50],fa:[0,50],w:.5})]}},
+{id:'x61',name:'Einbeinige Seitsprünge über das Band',cat:'plyo',equip:['Box','Widerstandsband'],desc:'Der hintere Fuß liegt fest auf einer Box hinter dir. Vor dir liegt ein Widerstandsband längs auf dem Boden. Mit dem vorderen Bein schnell links und rechts über das Band springen.',
+ anim:{v:'front',fm:true,d:1100,hold:0.06,props:[['boxBack',78,46,30],['floorband',101]],kf:[
+  f({x:94,hy:126,nl:[-12,-8,90],fl:[0,0,-90],fls:[0.36,0.36],na:[35,-35],fa:[-35,35]}),
+  f({x:98,hy:126,air:8,nl:[-4,-8,70],fl:[0,0,-90],fls:[0.36,0.36],na:[35,-35],fa:[-35,35],w:.7}),
+  f({x:102,hy:126,nl:[2,2,90],fl:[0,0,-90],fls:[0.36,0.36],na:[35,-35],fa:[-35,35]}),
+  f({x:98,hy:126,air:8,nl:[-4,-8,70],fl:[0,0,-90],fls:[0.36,0.36],na:[35,-35],fa:[-35,35],w:.7})]}},
+{id:'x62',name:'Einbeinige Vor- und Rücksprünge über das Band',cat:'plyo',equip:['Box','Widerstandsband'],desc:'Der hintere Fuß liegt fest auf einer Box hinter dir. Vor dir liegt ein Widerstandsband quer auf dem Boden. Mit dem vorderen Bein schnell vor und zurück über das Band springen.',
+ anim:{d:1100,hold:0.06,ik:{leg:'F',ankle:[64,147],ft:-70},props:[['box',38,34,32],['floorband',118]],kf:[
+  s({x:92,nl:[22,-6,90],fl:[-35,-55,-20],na:[40,90],fa:[-30,0],g:'heelN'}),
+  s({x:96,nl:[30,-2,60],fl:[-35,-55,-20],na:[0,40],fa:[0,40],g:'heelN',air:8,w:.7}),
+  s({x:100,nl:[42,8,90],fl:[-35,-55,-20],na:[-30,0],fa:[40,90],g:'heelN'}),
+  s({x:96,nl:[30,-2,60],fl:[-35,-55,-20],na:[0,40],fa:[0,40],g:'heelN',air:8,w:.7})]}},
+{id:'x67',name:'Box Jumps',cat:'plyo',equip:['Box'],desc:'Mit beiden Beinen abspringen und mit beiden Beinen weich auf der Box landen. Stabil stehen, dann wieder heruntersteigen.',
+ anim:{d:1800,props:[['box',118,54,38]],kf:[s({x:78,...SQ,na:[-40,-20],fa:[-45,-25]}),s({x:110,t:170,nl:[60,-30,60],fl:[55,-32,60],na:[160,170],fa:[155,165],air:62,w:.7}),s({x:123,...SQ,gy:144}),s({x:142,gy:144,w:.6}),s({x:104,gy:142,nl:[2,0,70],fl:[-2,0,70],w:.25}),s({x:80,w:.2})]}},
+{id:'x63',name:'Depth Jumps',cat:'plyo',equip:['Box'],desc:'Auf der Box stehen und dich mit einem Bein nach vorne herunterfallen lassen. Auf beiden Beinen landen und sofort explosiv nach oben abspringen.',
+ anim:{d:2400,hold:0.04,props:[['box',56,40,34]],kf:[
+  s({x:72,gy:148,nl:[2,0,90],fl:[35,-15,80],na:[10,30],fa:[10,30],w:1}),
+  s({x:86,gy:148,t:178,nl:[-12,0,90],fl:[38,2,70],na:[30,60],fa:[30,60],w:.5}),
+  s({x:106,gy:146,t:178,nl:[6,4,65],fl:[14,6,65],na:[40,80],fa:[35,75],w:.4}),
+  s({x:110,gy:170,t:178,nl:[8,4,65],fl:[14,6,65],na:[40,80],fa:[35,75],w:.35}),
+  s({x:112,t:140,nl:[78,-26,90],fl:[76,-28,90],na:[-40,-20],fa:[-45,-25],w:.4}),
+  s({x:116,t:178,nl:[4,0,40],fl:[0,0,40],na:[165,175],fa:[160,170],air:30,w:.8}),
+  s({x:116,t:150,nl:[55,-20,90],fl:[53,-22,90],na:[40,80],fa:[35,75],w:.5}),
+  s({x:88,gy:118,nl:[2,0,60],fl:[20,-20,60],na:[10,30],fa:[10,30],w:.2})]}},
+{id:'x64',name:'Skater Plate Hops',cat:'plyo',equip:['Hantelscheibe'],desc:'Zwei Hantelscheiben liegen mit Abstand schräg vor dir. Mit einem Skater Jump seitlich hinter die eine Scheibe springen und auf dem äußeren Bein landen. Mit diesem Bein einbeinig nach vorne auf die Scheibe und wieder zurück hüpfen, dann mit einem Skater Jump hinter die andere Scheibe und so weiter.',
+ anim:{v:'front',noFloor:true,d:3600,hold:0.1,props:[['floorPlane'],['plateFront',70],['plateFront',130]],kf:[
+  f({x:78,t:174,fl:[-2,2,-90],nl:[6,0,90],nls:[1,0.45],na:[-30,-60],fa:[-40,-70]}),
+  f({x:78,gy:189,air:8,fl:[-2,2,-90],nl:[6,0,90],nls:[1,0.45],na:[30,60],fa:[-30,-60],w:.5}),
+  f({x:78,gy:193,fl:[-2,2,-90],nl:[6,0,90],nls:[1,0.45],na:[30,60],fa:[-30,-60]}),
+  f({x:78,gy:189,air:8,fl:[-2,2,-90],nl:[6,0,90],nls:[1,0.45],na:[30,60],fa:[-30,-60],w:.5}),
+  f({x:78,t:174,fl:[-2,2,-90],nl:[6,0,90],nls:[1,0.45],na:[-30,-60],fa:[-40,-70]}),
+  f({x:100,air:22,nl:[14,8,60],fl:[-14,-8,-60],na:[40,80],fa:[30,60],w:.7}),
+  f({x:122,t:186,nl:[2,-2,90],fl:[-6,0,-90],fls:[1,0.45],na:[40,70],fa:[30,60]}),
+  f({x:122,gy:189,air:8,nl:[2,-2,90],fl:[-6,0,-90],fls:[1,0.45],na:[30,60],fa:[-30,-60],w:.5}),
+  f({x:122,gy:193,nl:[2,-2,90],fl:[-6,0,-90],fls:[1,0.45],na:[30,60],fa:[-30,-60]}),
+  f({x:122,gy:189,air:8,nl:[2,-2,90],fl:[-6,0,-90],fls:[1,0.45],na:[30,60],fa:[-30,-60],w:.5}),
+  f({x:122,t:186,nl:[2,-2,90],fl:[-6,0,-90],fls:[1,0.45],na:[40,70],fa:[30,60]}),
+  f({x:100,air:22,nl:[14,8,60],fl:[-14,-8,-60],na:[-30,-60],fa:[-40,-80],w:.7})]}},
+{id:'x65',name:'Front & Back Plate Hops',cat:'plyo',equip:['Hantelscheibe'],desc:'Wie In & Out Plate Hops, nur nach vorne und hinten: ein Bein springt vor die Scheibe, das andere dahinter. Dann zurück in die Mitte auf die Scheibe und beim nächsten Sprung die Beine wechseln.',
+ anim:{d:1800,hold:0.08,props:[['plate',100]],kf:[
+  s({x:100,nl:[34,14,90],fl:[-40,-25,60],na:[-30,10],fa:[40,90]}),
+  s({x:100,air:12,nl:[14,0,60],fl:[-10,-10,60],na:[0,40],fa:[0,40],w:.6}),
+  s({x:100,gy:179,nl:[4,-4,90],fl:[-2,-6,90],na:[20,60],fa:[15,55]}),
+  s({x:100,air:12,fl:[14,0,60],nl:[-10,-10,60],na:[0,40],fa:[0,40],w:.6}),
+  s({x:100,fl:[34,14,90],nl:[-40,-25,60],na:[40,90],fa:[-30,10]}),
+  s({x:100,air:12,fl:[14,0,60],nl:[-10,-10,60],na:[0,40],fa:[0,40],w:.6}),
+  s({x:100,gy:179,nl:[4,-4,90],fl:[-2,-6,90],na:[20,60],fa:[15,55]}),
+  s({x:100,air:12,nl:[14,0,60],fl:[-10,-10,60],na:[0,40],fa:[0,40],w:.6})]}},
+{id:'x28',name:'Plate Hops',cat:'plyo',equip:['Hantelscheibe'],desc:'Beidbeinig von hinter der Scheibe ganz auf die Hantelscheibe und wieder zurück auf den Boden hüpfen, kurzer Bodenkontakt. Auch als Plate Pogos bekannt.',
+ anim:{d:900,hold:0.08,props:[['plate',118]],kf:[s({x:76,nl:[6,-6,90],fl:[2,-8,90],na:[20,70],fa:[15,65]}),s({x:96,nl:[2,0,40],fl:[-2,0,40],na:[20,70],fa:[15,65],air:14}),s({x:114,gy:179,nl:[6,-6,90],fl:[2,-8,90],na:[20,70],fa:[15,65]}),s({x:96,nl:[2,0,40],fl:[-2,0,40],na:[20,70],fa:[15,65],air:14})]}},
+{id:'x30',name:'In & Out Plate Hops',cat:'plyo',equip:['Hantelscheibe'],desc:'Beine springen auseinander neben die Scheibe und wieder zusammen auf die Scheibe.',
+ anim:{v:'front',d:900,props:[['plate',100]],kf:[f({nl:[22,18,90],fl:[-22,-18,-90],na:[40,60],fa:[-40,-60]}),f({air:12,nl:[10,8,40],fl:[-10,-8,-40],na:[30,60],fa:[-30,-60]}),f({gy:179,nl:[4,0,90],fl:[-4,0,-90],na:[30,60],fa:[-30,-60]}),f({air:12,nl:[10,8,40],fl:[-10,-8,-40],na:[30,60],fa:[-30,-60]})]}},
+{id:'x49',name:'Single Leg Plate Hops',cat:'plyo',equip:['Hantelscheibe'],desc:'Auf einem Bein von hinter der Scheibe ganz auf die Hantelscheibe und wieder zurück auf den Boden hüpfen.',
+ anim:{d:1000,hold:0.08,props:[['plate',118]],kf:[s({x:76,nl:[8,-8,90],fl:[20,-70,30],na:[20,70],fa:[15,65]}),s({x:96,nl:[2,0,40],fl:[20,-70,30],na:[20,70],fa:[15,65],air:14}),s({x:114,gy:179,nl:[8,-8,90],fl:[20,-70,30],na:[20,70],fa:[15,65]}),s({x:96,nl:[2,0,40],fl:[20,-70,30],na:[20,70],fa:[15,65],air:14})]}},
+{id:'x51',name:'Single Leg Side Plate Hops',cat:'plyo',equip:['Hantelscheibe'],desc:'Auf einem Bein, die Hantelscheibe liegt neben dir. Seitlich ganz auf die Scheibe hüpfen und wieder zurück auf dieselbe Seite, der Fuß steht dort komplett auf dem Boden.',
+ anim:{v:'front',d:1100,hold:0.08,props:[['plate',102]],kf:[
+  f({x:62,nl:[3,-3,90],fl:[-6,0,-90],fls:[1,0.45],na:[30,70],fa:[-30,-70]}),
+  f({x:75,air:14,nl:[3,0,50],fl:[-6,0,-90],fls:[1,0.45],na:[30,70],fa:[-30,-70],w:.7}),
+  f({x:88,gy:179,nl:[3,-3,90],fl:[-6,0,-90],fls:[1,0.45],na:[30,70],fa:[-30,-70]}),
+  f({x:75,air:14,nl:[3,0,50],fl:[-6,0,-90],fls:[1,0.45],na:[30,70],fa:[-30,-70],w:.7})]}},
+{id:'x66',name:'Side Plate Hops',cat:'plyo',equip:['Hantelscheibe'],desc:'Füße eng zusammen, die Hantelscheibe liegt neben dir. Seitlich ganz auf die Scheibe hüpfen und wieder zurück auf dieselbe Seite neben die Scheibe.',
+ anim:{v:'front',d:1000,hold:0.08,props:[['plate',114]],kf:[
+  f({x:74,nl:[3,-3,90],fl:[-3,3,-90],na:[30,70],fa:[-30,-70]}),
+  f({x:94,air:14,nl:[3,0,50],fl:[-3,0,-50],na:[30,70],fa:[-30,-70]}),
+  f({x:114,gy:179,nl:[3,-3,90],fl:[-3,3,-90],na:[30,70],fa:[-30,-70]}),
+  f({x:94,air:14,nl:[3,0,50],fl:[-3,0,-50],na:[30,70],fa:[-30,-70]})]}},
+{id:'x52',name:'Single Leg Jumps',cat:'plyo',equip:['Box'],desc:'Der hintere Fuß bleibt fest auf einer Box hinter dir liegen. Mit dem vorderen Bein leicht in die Knie gehen und explosiv nach oben abspringen, weich landen und direkt wieder springen.',
+ anim:{v:'front',fm:true,d:1100,hold:0.08,props:[['boxBack',78,46,30]],kf:[
+  f({x:98,hy:130,nl:[2,0,90],nls:[0.88,0.88],fl:[0,0,-90],fls:[0.36,0.36],na:[35,-35],fa:[-35,35]}),
+  f({x:98,hy:106,nl:[2,0,10],fl:[0,0,-90],fls:[0.775,0.775],na:[35,-35],fa:[-35,35],w:.9})]}},
+{id:'x54',name:'Alternating Plate Hops',cat:'plyo',equip:['Hantelscheibe'],desc:'Ein Fuß steht ganz auf der Scheibe, der andere ganz auf dem Boden dahinter. Im Sprung die Füße wechseln.',
+ anim:{d:900,hold:0.08,props:[['plate',128]],kf:[
+  s({x:100,nl:[40,-5,90],fl:[-12,-20,90],na:[-30,10],fa:[40,90],g:'toeN',gy:179}),
+  s({x:100,nl:[15,-5,60],fl:[15,-5,60],air:12,na:[0,40],fa:[0,40],w:.8}),
+  s({x:100,fl:[40,-5,90],nl:[-12,-20,90],na:[40,90],fa:[-30,10],g:'toeF',gy:179}),
+  s({x:100,nl:[15,-5,60],fl:[15,-5,60],air:12,na:[0,40],fa:[0,40],w:.8})]}},
+];
+// Tempo: Kraft ruhiger mit Pausen an den Umkehrpunkten, Sprünge zügig
+for(const e of EXERCISES){const a=e.anim;if(e.cat==='kraft'){a.d=Math.round((a.d||1600)*1.4);a.hold??=0.28;}else{a.d=Math.round((a.d||1000)*1.25);a.hold??=0.08;}}
+
+const ICONS={
+  kraft:'<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="7" y="10.8" width="10" height="2.4" rx="1" fill="currentColor"/><rect x="3.6" y="6.5" width="3.6" height="11" rx="1.3" fill="currentColor"/><rect x="16.8" y="6.5" width="3.6" height="11" rx="1.3" fill="currentColor"/><rect x="1.2" y="9" width="2.6" height="6" rx="1" fill="currentColor"/><rect x="20.2" y="9" width="2.6" height="6" rx="1" fill="currentColor"/></svg>',
+  plyo:'<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M13.5 2.5 5 13.5h6l-1.5 8 8.5-11h-6z" fill="currentColor" stroke="currentColor" stroke-width="1.2" stroke-linejoin="round"/></svg>'};
+// Hauptgerät einer Übung (erstes Gerät alphabetisch, sonst 'Ohne')
+// Feste Reihenfolge innerhalb einer Gerätegruppe (sonst alphabetisch)
+const KRANK={x1:1,x33:2,x11:3,x9:4,x15:5,x27:6,x58:7,x23:8,x5:9,x57:10,x10:11,x68:12,x31:13,x25:14,x26:15,x60:16,x8:17,x4:18,x35:19,x34:20,x41:21,x44:22,x45:23,x69:24,x46:25,x42:26,x70:27};
+const RANK={x61:1,x62:2,x52:3,x63:4,x67:5,x22:6,x24:7};
+const mainEquip=e=>e.equip.length?[...e.equip].sort()[0]:'Ohne';
+const CATEGORIES=[{id:'kraft',label:'Kraft'},{id:'plyo',label:'Plyometrisch'}];
+const EQUIPMENT=['Box','Hantelscheibe','Kettlebell','Kurzhanteln','Ohne','Stepper','Widerstandsband']; // alphabetisch, 'Ohne' = ohne Gerät
+const BY_ID=Object.fromEntries(EXERCISES.map(e=>[e.id,{...e,S:prep(e.anim)}]));
+const KEY='laeuferknie-v4';
+let state=load(), catFilter='kraft', equipFilter='';
+
+function load(){
+  try{const s=JSON.parse(localStorage.getItem(KEY));if(s&&Array.isArray(s.plan))return {plan:s.plan.filter(id=>BY_ID[id]),done:(s.done||[]).filter(id=>BY_ID[id])};}catch(e){}
+  return {plan:[],done:[]};
+}
+function save(){try{localStorage.setItem(KEY,JSON.stringify(state));}catch(e){}}
+const esc=s=>String(s||'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const svgTag=id=>`<svg viewBox="${BY_ID[id].S.vb.join(' ')}" data-anim="${id}" aria-hidden="true"></svg>`;
+
+function card(e,mode){
+  const sel=state.plan.includes(e.id), done=state.done.includes(e.id);
+  const tags=(e.equip.length?[...e.equip].sort():['Ohne Gerät']).map(t=>`<span class="tag">${esc(t)}</span>`).join('');
+  const ctrl=mode==='library'
+    ?`<button class="toggle" data-act="toggle" data-id="${e.id}" aria-label="Zum Training">${sel?'✓':'+'}</button>`
+    :`<button class="check" data-act="check" data-id="${e.id}" aria-label="Abhaken">✓</button>`;
+  return `<div class="ex cat-${e.cat} ${mode==='library'&&sel?'selected':''} ${mode==='training'&&done?'done':''}">
+    <button class="fig" data-act="detail" data-id="${e.id}" aria-label="Ausführung ansehen">${svgTag(e.id)}</button>
+    <div class="ex-body" data-act="detail" data-id="${e.id}">
+      <div class="ex-title">${esc(e.name)}</div>
+      <div class="ex-meta">${tags}</div>
+    </div>${ctrl}</div>`;
+}
+
+function render(){
+  document.getElementById('seg').innerHTML=CATEGORIES.map(c=>`<button class="${catFilter===c.id?'active':''}" data-cat="${c.id}">${ICONS[c.id]}${c.label}</button>`).join('');
+  document.getElementById('filters').innerHTML=`<button class="chip ${equipFilter?'':'active'}" data-equip="">Alle</button>`+EQUIPMENT.map(q=>`<button class="chip ${equipFilter===q?'active':''}" data-equip="${q}">${q}</button>`).join('');
+  const list=EXERCISES.filter(e=>e.cat===catFilter&&(!equipFilter||(equipFilter==='Ohne'?e.equip.length===0:e.equip.includes(equipFilter)))).sort((x,y)=>catFilter==='plyo'?(EQUIPMENT.indexOf(mainEquip(x))-EQUIPMENT.indexOf(mainEquip(y)))||((RANK[x.id]??99)-(RANK[y.id]??99))||x.name.localeCompare(y.name,'de'):((KRANK[x.id]??99)-(KRANK[y.id]??99))||x.name.localeCompare(y.name,'de'));
+  document.getElementById('count').textContent=`${list.length} Übung${list.length===1?'':'en'}`;
+  document.getElementById('library').innerHTML=list.length?list.map(e=>card(e,'library')).join(''):`<div class="empty">Keine Übung</div>`;
+  const plan=state.plan.map(id=>BY_ID[id]).filter(Boolean);
+  const dc=plan.filter(e=>state.done.includes(e.id)).length;
+  
+  document.getElementById('training').innerHTML=plan.length?plan.map(e=>card(e,'training')).join(''):`<div class="empty">Leer</div>`;
+  const left=plan.length-dc;
+  document.getElementById('progressText').textContent=left?`noch ${left} von ${plan.length}`:`${plan.length} von ${plan.length}`;
+  document.getElementById('bar').style.width=plan.length?(dc/plan.length*100)+'%':'0';
+  document.getElementById('progressBox').hidden=!plan.length;
+  document.getElementById('trainingActions').hidden=!plan.length;
+  document.getElementById('doneBanner').style.display=plan.length&&dc===plan.length?'block':'none';
+  observe();
+}
+
+// Animationen: nur sichtbare Figuren zeichnen
+const visible=new Set();
+const io='IntersectionObserver' in window?new IntersectionObserver(es=>es.forEach(en=>en.isIntersecting?visible.add(en.target):visible.delete(en.target)),{rootMargin:'100px'}):null;
+function observe(){
+  visible.forEach(el=>{if(!el.isConnected)visible.delete(el);});
+  document.querySelectorAll('svg[data-anim]').forEach(el=>{if(el._obs)return;el._obs=1;io?io.observe(el):visible.add(el);});
+}
+let last=0;
+function loop(ts){
+  if(ts-last>33){last=ts;
+    visible.forEach(el=>{const e=BY_ID[el.dataset.anim];if(e&&el.isConnected)el.innerHTML=window.drawFig(e.S,ts);});
+  }
+  requestAnimationFrame(loop);
+}
+window.drawFig=(S,t)=>renderFig(S,t);
+
+// Detailansicht
+const overlay=document.getElementById('overlay');
+function openDetail(id){
+  const e=BY_ID[id];
+  document.getElementById('sheet').innerHTML=`<button class="x" data-act="close" aria-label="Schließen"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/></svg></button><div class="big">${svgTag(id)}</div>
+    <h2>${esc(e.name)}</h2>
+    <div class="ex-meta">${(e.equip.length?[...e.equip].sort():['Ohne Gerät']).map(t=>`<span class="tag">${esc(t)}</span>`).join('')}</div>
+    <p>${esc(e.desc)}</p>
+`;
+  overlay.classList.add('open');observe();
+}
+overlay.addEventListener('click',ev=>{if(ev.target===overlay)overlay.classList.remove('open');});
+
+document.querySelectorAll('.tab').forEach(t=>t.onclick=()=>{
+  document.querySelectorAll('.tab').forEach(x=>x.classList.toggle('active',x===t));
+  document.getElementById('view-library').hidden=t.dataset.view!=='library';
+  document.getElementById('view-training').hidden=t.dataset.view!=='training';
+});
+document.body.addEventListener('click',ev=>{
+  const c=ev.target.closest('[data-cat]');if(c){catFilter=c.dataset.cat;render();return;}
+  const q=ev.target.closest('[data-equip]');if(q){equipFilter=q.dataset.equip;render();return;}
+  const b=ev.target.closest('[data-act]');if(!b)return;
+  const id=b.dataset.id, act=b.dataset.act;
+  if(act==='detail'){openDetail(id);return;}
+  if(act==='close'){overlay.classList.remove('open');return;}
+  if(act==='toggle'){state.plan=state.plan.includes(id)?state.plan.filter(x=>x!==id):[...state.plan,id];state.done=state.done.filter(x=>state.plan.includes(x));}
+  if(act==='check'){state.done=state.done.includes(id)?state.done.filter(x=>x!==id):[...state.done,id];}
+  if(b.dataset.close)overlay.classList.remove('open');
+  save();render();
+});
+document.getElementById('resetChecks').onclick=()=>{state.done=[];save();render();};
+document.getElementById('clearPlan').onclick=()=>{state.plan=[];state.done=[];save();render();};
+// Geräte-Leiste: Ausblenden zeigt, dass man wischen kann
+const fl=document.getElementById('filters');
+function fade(){const max=fl.scrollWidth-fl.clientWidth;fl.classList.toggle('scrolled',fl.scrollLeft>4);fl.classList.toggle('at-end',fl.scrollLeft>=max-4);}
+fl.addEventListener('scroll',fade,{passive:true});window.addEventListener('resize',fade);
+render();fade();requestAnimationFrame(loop);
+if('serviceWorker' in navigator)navigator.serviceWorker.register('sw.js').catch(()=>{});
+</script>
+</body>
+</html>
