@@ -21,7 +21,8 @@
   --far:#5a6880;--ghost:#222d44;--prop:#26324a;--propd:#b3bfd1;--tile:#121b2e;}
 }
 *{box-sizing:border-box;margin:0;padding:0}
-html{-webkit-text-size-adjust:100%}
+html{-webkit-text-size-adjust:100%;-webkit-tap-highlight-color:transparent}
+button,.ex,.sheet,.tabs,.seg,.filters{-webkit-user-select:none;user-select:none;-webkit-touch-callout:none}
 body{font-family:Figtree,system-ui,sans-serif;background:var(--paper);color:var(--ink);min-height:100vh;padding-bottom:calc(96px + env(safe-area-inset-bottom))}
 button{font-family:inherit;color:inherit}
 button:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
@@ -573,6 +574,7 @@ window.drawFig=(S,t)=>renderFig(S,t);
 // Detailansicht
 const overlay=document.getElementById('overlay');
 function openDetail(id){
+  try{window.getSelection().removeAllRanges();}catch(_){}
   const e=BY_ID[id];
   document.getElementById('sheet').innerHTML=`<button class="x" data-act="close" aria-label="Schließen"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/></svg></button><div class="big">${svgTag(id)}</div>
     <h2>${esc(e.name)}</h2>
